@@ -19,20 +19,21 @@ from cbpro.cbpro_auth import get_auth_headers
 
 class WebsocketClient(object):
     def __init__(
-            self,
-            url="wss://ws-feed.pro.coinbase.com",
-            products=None,
-            message_type="subscribe",
-            mongo_collection=None,
-            should_print=True,
-            auth=False,
-            api_key="",
-            api_secret="",
-            api_passphrase="",
-            # Make channels a required keyword-only argument; see pep3102
-            *,
-            # Channel options: ['ticker', 'user', 'matches', 'level2', 'full']
-            channels):
+        self,
+        url="wss://ws-feed.pro.coinbase.com",
+        products=None,
+        message_type="subscribe",
+        mongo_collection=None,
+        should_print=True,
+        auth=False,
+        api_key="",
+        api_secret="",
+        api_passphrase="",
+        # Make channels a required keyword-only argument; see pep3102
+        *,
+        # Channel options: ['ticker', 'user', 'matches', 'level2', 'full']
+        channels
+    ):
         self.url = url
         self.products = products
         self.channels = channels
@@ -70,21 +71,36 @@ class WebsocketClient(object):
             self.url = self.url[:-1]
 
         if self.channels is None:
-            self.channels = [{"name": "ticker", "product_ids": [product_id for product_id in self.products]}]
-            sub_params = {'type': 'subscribe', 'product_ids': self.products, 'channels': self.channels}
+            self.channels = [
+                {
+                    "name": "ticker",
+                    "product_ids": [product_id for product_id in self.products],
+                }
+            ]
+            sub_params = {
+                "type": "subscribe",
+                "product_ids": self.products,
+                "channels": self.channels,
+            }
         else:
-            sub_params = {'type': 'subscribe', 'product_ids': self.products, 'channels': self.channels}
+            sub_params = {
+                "type": "subscribe",
+                "product_ids": self.products,
+                "channels": self.channels,
+            }
 
         if self.auth:
             timestamp = str(time.time())
-            message = timestamp + 'GET' + '/users/self/verify'
-            auth_headers = get_auth_headers(timestamp, message, self.api_key, self.api_secret, self.api_passphrase)
-            sub_params['signature'] = auth_headers['CB-ACCESS-SIGN']
-            sub_params['key'] = auth_headers['CB-ACCESS-KEY']
-            sub_params['passphrase'] = auth_headers['CB-ACCESS-PASSPHRASE']
-            sub_params['timestamp'] = auth_headers['CB-ACCESS-TIMESTAMP']
+            message = timestamp + "GET" + "/users/self/verify"
+            auth_headers = get_auth_headers(
+                timestamp, message, self.api_key, self.api_secret, self.api_passphrase
+            )
+            sub_params["signature"] = auth_headers["CB-ACCESS-SIGN"]
+            sub_params["key"] = auth_headers["CB-ACCESS-KEY"]
+            sub_params["passphrase"] = auth_headers["CB-ACCESS-PASSPHRASE"]
+            sub_params["timestamp"] = auth_headers["CB-ACCESS-TIMESTAMP"]
 
-        self.ws = create_connection(self.url)
+        self.ws = create_connection(self.url, skip_utf8_validation=True)
 
         self.ws.send(json.dumps(sub_params))
 
@@ -118,8 +134,8 @@ class WebsocketClient(object):
         self.on_close()
 
     def close(self):
-        self.stop = True   # will only disconnect after next msg recv
-        self._disconnect() # force disconnect so threads can join
+        self.stop = True  # will only disconnect after next msg recv
+        self._disconnect()  # force disconnect so threads can join
         self.thread.join()
 
     def on_open(self):
@@ -139,14 +155,13 @@ class WebsocketClient(object):
     def on_error(self, e, data=None):
         self.error = e
         self.stop = True
-        print('{} - data: {}'.format(e, data))
+        print("{} - data: {}".format(e, data))
 
 
 if __name__ == "__main__":
     import sys
     import cbpro
     import time
-
 
     class MyWebsocketClient(cbpro.WebsocketClient):
         def on_open(self):
@@ -161,7 +176,6 @@ if __name__ == "__main__":
 
         def on_close(self):
             print("-- Goodbye! --")
-
 
     wsClient = MyWebsocketClient()
     wsClient.start()
