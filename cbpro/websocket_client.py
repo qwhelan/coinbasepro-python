@@ -100,7 +100,7 @@ class WebsocketClient(object):
             sub_params["passphrase"] = auth_headers["CB-ACCESS-PASSPHRASE"]
             sub_params["timestamp"] = auth_headers["CB-ACCESS-TIMESTAMP"]
 
-        self.ws = create_connection(self.url, skip_utf8_validation=True)
+        self.ws = create_connection(self.url, timeout=600, skip_utf8_validation=True)
 
         self.ws.send(json.dumps(sub_params))
 
